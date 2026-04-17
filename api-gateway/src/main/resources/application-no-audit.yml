@@ -1,0 +1,9 @@
+# Run with: --spring.profiles.active=no-audit (when PostgreSQL is not available for gateway audit rows)
+spring:
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
+
+gateway:
+  audit:
+    enabled: false

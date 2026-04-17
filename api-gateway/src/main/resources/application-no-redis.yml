@@ -1,0 +1,15 @@
+# Use when Redis is not available (rate limiting disabled; start with --spring.profiles.active=no-redis)
+spring:
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration
+      - org.springframework.boot.autoconfigure.data.redis.RedisReactiveAutoConfiguration
+
+gateway:
+  rate-limit:
+    enabled: false
+
+management:
+  health:
+    redis:
+      enabled: false

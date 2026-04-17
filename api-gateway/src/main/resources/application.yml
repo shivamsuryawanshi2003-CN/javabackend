@@ -1,0 +1,100 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: api-gateway
+  datasource:
+    url: ${GATEWAY_DATASOURCE_URL:jdbc:postgresql://localhost:5432/authdb}
+    username: ${GATEWAY_DATASOURCE_USERNAME:postgres}
+    password: ${GATEWAY_DATASOURCE_PASSWORD:postgres}
+    driver-class-name: org.postgresql.Driver
+  data:
+    redis:
+      host: ${GATEWAY_REDIS_HOST:localhost}
+      port: ${GATEWAY_REDIS_PORT:6379}
+      password: ${GATEWAY_REDIS_PASSWORD:}
+      timeout: ${GATEWAY_REDIS_COMMAND_TIMEOUT:2s}
+      lettuce:
+        pool:
+          max-active: ${GATEWAY_REDIS_POOL_MAX_ACTIVE:32}
+          max-idle: 16
+          min-idle: 4
+  cloud:
+    gateway:
+      # Official SC Gateway CORS (preflight + credentialed requests). Same origins as gateway.cors.allowed-origins / GATEWAY_CORS_ORIGINS.
+      globalcors:
+        add-to-simple-url-handler-mapping: true
+        cors-configurations:
+          '[/**]':
+            allowedOrigins:
+              - "http://localhost:3000"
+              - "http://127.0.0.1:3000"
+            allowedMethods:
+              - GET
+              - POST
+              - PUT
+              - PATCH
+              - DELETE
+              - OPTIONS
+              - HEAD
+            allowedHeaders:
+              - Authorization
+              - Content-Type
+              - X-Requested-With
+              - X-Correlation-ID
+            exposedHeaders:
+              - X-Correlation-ID
+            allowCredentials: true
+            maxAge: 3600
+      # Upstream may echo same headers (CORS, correlation id) — keep a single value on the client response.
+      default-filters:
+        - DedupeResponseHeader=Access-Control-Allow-Origin Access-Control-Allow-Credentials Access-Control-Allow-Headers Access-Control-Expose-Headers Access-Control-Max-Age X-Correlation-ID
+      httpclient:
+        connect-timeout: 5000
+        response-timeout: 30s
+      routes:
+        - id: authservice
+          uri: ${JOBRA_AUTH_SERVICE_URI:http://localhost:8081}
+          predicates:
+            - Path=/api/**,/oauth2/**,/login/**,/error
+          filters:
+            # So OAuth redirect_uri matches the gateway (e.g. :8080), not upstream :8081
+            - PreserveHostHeader
+
+# Same signing key as authservice — set JWT_SECRET in env or .env/local.env
+jwt:
+  secret: ${JWT_SECRET:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa}
+
+gateway:
+  security:
+    admin-pattern: /api/admin/**
+    # /api/auth/internal/** is treated as public at the gateway (no JWT); authservice enforces X-Internal-Key.
+  audit:
+    enabled: ${GATEWAY_AUDIT_ENABLED:true}
+  cors:
+    # Comma-separated; must include the browser Origin (e.g. Next http://localhost:3000)
+    allowed-origins: "${GATEWAY_CORS_ORIGINS:http://localhost:3000,http://127.0.0.1:3000}"
+  rate-limit:
+    enabled: ${GATEWAY_RATE_LIMIT_ENABLED:true}
+    fail-open: ${GATEWAY_RATE_LIMIT_FAIL_OPEN:true}
+    key-prefix: gw:rl
+    window-seconds: 60
+    default-max-per-window: ${GATEWAY_RL_DEFAULT:300}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,gateway
+  endpoint:
+    health:
+      show-details: when_authorized
+  health:
+    redis:
+      enabled: true
+
+logging:
+  level:
+    org.springframework.cloud.gateway: INFO
+    com.jobra.apigateway: INFO
