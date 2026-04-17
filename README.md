@@ -15,9 +15,11 @@ Two Spring Boot apps: **api-gateway** (**8080**) and **authservice** (**8081**).
 
 ## 1. Environment file
 
-1. Copy `.env/local.env.example` to `.env/local.env`
+The repo includes **`.env/local.env`** (same keys as **`.env/local.env.example`**) so a clone is runnable after you fill secrets. The copy on **GitHub** must use **placeholders only**: GitHub **Push Protection** rejects commits that contain real OAuth client secrets, Azure app secrets, mail app passwords, and similar. Your **local** machine should keep the real values in `.env/local.env`; they are not re-uploaded. Details: **`.env/README.txt`**.
+
+1. If **`.env/local.env`** is missing, copy **`.env/local.env.example`** to **`.env/local.env`**
 2. Set **`JWT_SECRET`** (same value for **both** Java services) and **`AUTH_INTERNAL_API_KEY`**
-3. For Next.js on **3000**: **`APP_FRONTEND_URL`**, **`GATEWAY_CORS_ORIGINS`**, and (for convenience) **`NEXT_PUBLIC_GATEWAY_URL`** — see `.env/local.env.example`
+3. For Next.js on **3000**: **`APP_FRONTEND_URL`**, **`GATEWAY_CORS_ORIGINS`**, and (for convenience) **`NEXT_PUBLIC_GATEWAY_URL`** — see **`.env/local.env.example`** or **`.env/local.env`**
 
 Load env **before** starting either service (from this `java` folder):
 
